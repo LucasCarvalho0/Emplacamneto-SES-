@@ -1,0 +1,259 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  OPERATOR
+}
+
+enum VehicleStatus {
+  PENDING   // importado e autorizado, ainda sem operador
+  ASSIGNED  // distribuído a um operador
+  COMPLETED // emplacado e confirmado no servidor
+  BLOCKED   // não pode ser emplacado (ver blockReason)
+}
+
+enum BatchStatus {
+  ACTIVE
+  FINISHED
+  CANCELLED
+}
+
+enum PlatingMethod {
+  SCAN
+  MANUAL
+}
+
+enum ScanResult {
+  OK
+  NOT_FOUND
+  NOT_ASSIGNED
+  ALREADY_DONE
+  BLOCKED
+  VIN_MISMATCH
+  PLATE_MISMATCH
+  CONFLICT
+}
+
+model User {
+  id                 String    @id @default(cuid())
+  role               Role
+  name               String
+  email              String?   @unique // administrativo
+  matricula          String?   @unique // operador
+  passwordHash       String
+  active             Boolean   @default(true)
+  mustChangePassword Boolean   @default(false)
+  lastLoginAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  sessions       Session[]
+  batchesOwned   Batch[]         @relation("BatchOperator")
+  batchesCreated Batch[]         @relation("BatchCreator")
+  ordersImported ServiceOrder[]  @relation("OsImportedBy")
+  vehicles       Vehicle[]       @relation("VehicleAssignee")
+  platings       Plating[]       @relation("PlatingOperator")
+  assignFrom     AssignmentLog[] @relation("AssignFrom")
+  assignTo       AssignmentLog[] @relation("AssignTo")
+  assignBy       AssignmentLog[] @relation("AssignBy")
+  scans          ScanAttempt[]   @relation("ScanOperator")
+  audits         AuditLog[]      @relation("AuditUser")
+  resets         PasswordReset[]
+}
+
+model Session {
+  id        String   @id // SHA-256 do token do cookie (o token em si nunca é gravado)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model LoginAttempt {
+  id         String   @id @default(cuid())
+  identifier String
+  ip         String?
+  success    Boolean
+  createdAt  DateTime @default(now())
+
+  @@index([identifier, createdAt])
+  @@index([ip, createdAt])
+}
+
+model ServiceOrder {
+  id             String   @id @default(cuid())
+  code           String   @unique // identificador interno, ex.: OS-20260529-01
+  externalCode   String? // identificação operacional informada pelo administrativo
+  operationDate  DateTime @db.Date
+  sourceFileName String
+  fileHash       String
+  sheets         String[]
+  importedById   String
+  importedBy     User     @relation("OsImportedBy", fields: [importedById], references: [id])
+  importedAt     DateTime @default(now())
+
+  vehicles Vehicle[]
+  batches  Batch[]
+  issues   ImportIssue[]
+
+  @@index([operationDate])
+  @@index([fileHash])
+}
+
+model ImportIssue {
+  id             String       @id @default(cuid())
+  serviceOrderId String
+  serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  sheetName      String
+  rowNumber      Int
+  value          String?
+  message        String
+
+  @@index([serviceOrderId])
+}
+
+model Vehicle {
+  id             String        @id @default(cuid())
+  serviceOrderId String
+  serviceOrder   ServiceOrder  @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  vin            String
+  plate          String?
+  sheetName      String
+  rowNumber      Int
+  bay            String? // VAGA
+  model          String?
+  color          String?
+  client         String?
+  retirarChave   Boolean? // true = retira a chave; null = não informado
+  duasChaves     Boolean? // true = 2 chaves; false = 1 chave; null = não informado
+  document       String?
+  sheetStatus    String?
+  status         VehicleStatus @default(PENDING)
+  blockReason    String?
+  assignedToId   String?
+  assignedTo     User?         @relation("VehicleAssignee", fields: [assignedToId], references: [id])
+  batchId        String?
+  batch          Batch?        @relation(fields: [batchId], references: [id])
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  plating     Plating?
+  scans       ScanAttempt[]
+  assignments AssignmentLog[]
+
+  @@unique([serviceOrderId, vin])
+  @@unique([serviceOrderId, plate])
+  @@index([status])
+  @@index([assignedToId, status])
+  @@index([serviceOrderId, status])
+  @@index([vin])
+  @@index([plate])
+}
+
+model Batch {
+  id             String       @id @default(cuid())
+  serviceOrderId String
+  serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  operatorId     String
+  operator       User         @relation("BatchOperator", fields: [operatorId], references: [id])
+  createdById    String
+  createdBy      User         @relation("BatchCreator", fields: [createdById], references: [id])
+  status         BatchStatus  @default(ACTIVE)
+  createdAt      DateTime     @default(now())
+  finishedAt     DateTime?
+
+  vehicles Vehicle[]
+  platings Plating[]
+
+  @@index([operatorId, status])
+  @@index([serviceOrderId])
+}
+
+// Um registro por veículo emplacado. As restrições únicas abaixo são a última
+// barreira contra conclusão duplicada, mesmo se dois operadores confirmarem juntos.
+model Plating {
+  id          String        @id @default(cuid())
+  vehicleId   String        @unique
+  vehicle     Vehicle       @relation(fields: [vehicleId], references: [id])
+  vin         String        @unique
+  plate       String
+  operatorId  String
+  operator    User          @relation("PlatingOperator", fields: [operatorId], references: [id])
+  batchId     String?
+  batch       Batch?        @relation(fields: [batchId], references: [id])
+  scannedVin  String
+  method      PlatingMethod
+  completedAt DateTime      @default(now())
+
+  @@index([operatorId, completedAt])
+  @@index([completedAt])
+}
+
+model AssignmentLog {
+  id         String   @id @default(cuid())
+  vehicleId  String
+  vehicle    Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  fromUserId String?
+  fromUser   User?    @relation("AssignFrom", fields: [fromUserId], references: [id])
+  toUserId   String?
+  toUser     User?    @relation("AssignTo", fields: [toUserId], references: [id])
+  byUserId   String
+  byUser     User     @relation("AssignBy", fields: [byUserId], references: [id])
+  batchId    String?
+  reason     String // DISTRIBUICAO | REDISTRIBUICAO
+  createdAt  DateTime @default(now())
+
+  @@index([vehicleId])
+}
+
+model ScanAttempt {
+  id           String        @id @default(cuid())
+  operatorId   String
+  operator     User          @relation("ScanOperator", fields: [operatorId], references: [id])
+  vehicleId    String?
+  vehicle      Vehicle?      @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  scannedValue String
+  result       ScanResult
+  method       PlatingMethod
+  createdAt    DateTime      @default(now())
+
+  @@index([operatorId, createdAt])
+  @@index([result, createdAt])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation("AuditUser", fields: [userId], references: [id])
+  action    String
+  entity    String?
+  entityId  String?
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([action])
+}
+
+model PasswordReset {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique // SHA-256 do token enviado por e-mail
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, createdAt])
+}
