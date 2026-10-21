@@ -44,11 +44,11 @@ function IOSSteps() {
         </li>
         <li className="flex items-start gap-3">
           <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-chapa text-xs font-bold text-white">2</span>
-          <span>Role para baixo e toque em <span className="font-semibold text-white">"Adicionar à Tela de Início"</span></span>
+          <span>Role para baixo e toque em <span className="font-semibold text-white">&ldquo;Adicionar à Tela de Início&rdquo;</span></span>
         </li>
         <li className="flex items-start gap-3">
           <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-chapa text-xs font-bold text-white">3</span>
-          <span>Toque em <span className="font-semibold text-white">"Adicionar"</span> no canto superior direito</span>
+          <span>Toque em <span className="font-semibold text-white">&ldquo;Adicionar&rdquo;</span> no canto superior direito</span>
         </li>
       </ol>
     </div>
