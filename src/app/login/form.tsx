@@ -40,7 +40,14 @@ export function LoginForm() {
           placeholder="seu@email.com ou MATRICULA"
           className={fieldDark}
         />
-        <p className="mt-1.5 text-xs text-white/35">{hintText}</p>
+        <p className={`mt-1.5 text-xs font-medium ${
+          isEmail
+            ? "text-sinal"
+            : identifier
+            ? "text-white/80"
+            : "text-white/50"
+        }`}>{hintText}</p>
+
       </div>
 
       {/* Campo senha */}
