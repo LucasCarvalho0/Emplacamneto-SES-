@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Barlow, Barlow_Condensed } from "next/font/google";
 import "./globals.css";
 import { RegisterSW } from "@/components/register-sw";
-import { PwaInstallBanner } from "@/components/pwa-install-banner";
 
 const body = Barlow({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-body" });
 const placa = Barlow_Condensed({ subsets: ["latin"], weight: ["600", "700"], variable: "--font-placa" });
@@ -24,7 +23,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
         <RegisterSW />
-        <PwaInstallBanner />
       </body>
     </html>
   );
