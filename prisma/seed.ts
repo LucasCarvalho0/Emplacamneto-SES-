@@ -12,12 +12,19 @@ async function main() {
   if (problem) throw new Error(problem);
 
   const existing = await db.user.findUnique({ where: { email } });
+  const passwordHash = await hashPassword(password);
+
   if (existing) {
-    console.log(`Já existe um usuário com ${email}. Nada foi alterado.`);
+    await db.user.update({
+      where: { email },
+      data: { passwordHash, name, role: "ADMIN", active: true, mustChangePassword: false },
+    });
+    console.log(`Administrador atualizado com sucesso: ${email}`);
     return;
   }
+
   await db.user.create({
-    data: { role: "ADMIN", name, email, passwordHash: await hashPassword(password), mustChangePassword: false },
+    data: { role: "ADMIN", name, email, passwordHash, mustChangePassword: false },
   });
   console.log(`Administrador criado: ${email}`);
 }
