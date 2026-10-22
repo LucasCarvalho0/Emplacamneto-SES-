@@ -118,3 +118,22 @@ test("Aba sem cabeçalho reconhecível não é importada", () => {
   assert.equal(p.headerFound, false);
   assert.equal(p.rows.length, 0);
 });
+
+test("Reconhece variações de cabeçalho: CHASSI, PLACAS, BOX / VAGA", () => {
+  const input: SheetInput = {
+    name: "RETIRA A CHAVE",
+    hidden: false,
+    rows: [
+      ["ORDEM DE SERVIÇO", null, "DATA: 10/05/2026"],
+      ["NUMERO DO CHASSI", "PLACA DO VEICULO", "BOX", "MODELO DO VEICULO"],
+      ["94DFAAP16TB028813", "ABC1D23", "VAGA-42", "KICKS"],
+    ],
+  };
+  const p = parseSheet(input);
+  assert.equal(p.headerFound, true);
+  assert.equal(p.rows.length, 1);
+  assert.equal(p.rows[0]!.vin, "94DFAAP16TB028813");
+  assert.equal(p.rows[0]!.plate, "ABC1D23");
+  assert.equal(p.rows[0]!.bay, "VAGA-42");
+  assert.equal(p.rows[0]!.model, "KICKS");
+});

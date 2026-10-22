@@ -4,7 +4,7 @@ import { requireOperator } from "@/lib/auth/guards";
 import { formatDateTime, startOfTodayBR } from "@/lib/time";
 import { one, type SP } from "@/lib/params";
 import { chavesLabel, retirarChaveLabel } from "@/lib/domain/keys";
-import { Flash, Panel, PlateTag } from "@/components/ui";
+import { BayBadge, Flash, Panel, PlateTag } from "@/components/ui";
 import { btnPrimary, btnQuiet } from "@/components/styles";
 import { finishBatchAction } from "./actions";
 
@@ -83,15 +83,22 @@ export default async function OperatorHome({ searchParams }: { searchParams: SP 
       {[...groups.entries()].map(([label, list]) => (
         <section key={label}>
           <h2 className="mb-2 text-base font-semibold">{label} <span className="font-normal text-asfalto-500">({list.length})</span></h2>
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {list.map((v) => (
-              <li key={v.id} className="flex items-center justify-between gap-3 rounded-md border border-concreto-200 bg-white p-3">
-                <div className="min-w-0">
-                  <PlateTag plate={v.plate} />
-                  <p className="mt-1 truncate font-mono text-xs">{v.vin}</p>
-                  <p className="truncate text-xs text-asfalto-500">{[v.model, v.color, v.bay ? `vaga ${v.bay}` : null].filter(Boolean).join(", ")}</p>
+              <li key={v.id} className="rounded-lg border border-concreto-200 bg-white p-3.5 shadow-xs space-y-2.5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <PlateTag plate={v.plate} />
+                    <p className="font-mono text-xs font-semibold text-asfalto-700 tracking-wider">{v.vin}</p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1.5">
+                    <BayBadge bay={v.bay} />
+                    <span className="rounded bg-asfalto px-2 py-0.5 text-xs font-medium text-white">{chavesLabel(v.duasChaves)}</span>
+                  </div>
                 </div>
-                <span className="shrink-0 rounded bg-asfalto px-2 py-0.5 text-xs font-medium text-white">{chavesLabel(v.duasChaves)}</span>
+                <div className="border-t border-concreto-100 pt-2 flex items-center justify-between text-xs text-asfalto-600">
+                  <span className="truncate">{[v.model, v.color].filter(Boolean).join(" • ") || "Modelo não informado"}</span>
+                </div>
               </li>
             ))}
           </ul>

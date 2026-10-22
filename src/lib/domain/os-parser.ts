@@ -50,16 +50,96 @@ export interface ParsedSheet {
 }
 
 const COLUMNS: Record<string, string> = {
+  // VIN / Chassi
   VIN: "vin",
+  CHASSI: "vin",
+  CHASSIS: "vin",
+  "NUMERO DO CHASSI": "vin",
+  "NUMERO CHASSI": "vin",
+  "N DO CHASSI": "vin",
+  "N CHASSI": "vin",
+  "CHASSI (VIN)": "vin",
+  "CHASSI / VIN": "vin",
+  "VIN / CHASSI": "vin",
+  "CHASSI/VIN": "vin",
+  "VIN/CHASSI": "vin",
+  "CHASSIS (VIN)": "vin",
+  "NUMERO DE CHASSI": "vin",
+  "CODIGO CHASSI": "vin",
+
+  // Placa
   PLACA: "plate",
+  PLACAS: "plate",
+  "PLACA VEICULO": "plate",
+  "PLACA DO VEICULO": "plate",
+  "PLACA MERCOSUL": "plate",
+  "NUMERO DA PLACA": "plate",
+  "NUMERO PLACA": "plate",
+
+  // Vaga
   VAGA: "bay",
+  VAGAS: "bay",
+  "VAGA VEICULO": "bay",
+  "VAGA DO VEICULO": "bay",
+  "VAGA/BOX": "bay",
+  "VAGA / BOX": "bay",
+  BOX: "bay",
+  LOCAL: "bay",
+  LOCALIZACAO: "bay",
+  POSICAO: "bay",
+  "POSICAO / VAGA": "bay",
+  "VAGA / POSICAO": "bay",
+  ENDERECO: "bay",
+  BAY: "bay",
+  PATIO: "bay",
+  "PATIO / VAGA": "bay",
+  "VAGA PATIO": "bay",
+  "LOCAL DO VEICULO": "bay",
+  "LOCALIZACAO DO VEICULO": "bay",
+  "VAGA ESTACIONAMENTO": "bay",
+  ESTACIONAMENTO: "bay",
+
+  // Modelo
   MODELO: "model",
+  "MODELO DO VEICULO": "model",
+  VEICULO: "model",
+  DESCRICAO: "model",
+  "DESCRICAO DO VEICULO": "model",
+
+  // Cor
   COR: "color",
+  CORES: "color",
+  "COR DO VEICULO": "color",
+
+  // Cliente
   CLIENTE: "client",
+  PROPRIETARIO: "client",
+  FROTA: "client",
+
+  // Retirar Chave
   "RETIRAR CHAVE": "retirarChave",
+  "RETIRA CHAVE": "retirarChave",
+  "RETIRADA DE CHAVE": "retirarChave",
+  "RETIRADA CHAVE": "retirarChave",
+  "RETIRA A CHAVE": "retirarChave",
+  "RETIRAR A CHAVE": "retirarChave",
+
+  // Documento
   DOCUMENTO: "document",
+  DOCUMENTOS: "document",
+  DOC: "document",
+
+  // Status
   STATUS: "status",
+  SITUACAO: "status",
+
+  // 2 Chaves
   "2 CHAVES NO VEICULO": "duasChaves",
+  "DUAS CHAVES NO VEICULO": "duasChaves",
+  "2 CHAVES": "duasChaves",
+  "QTD CHAVES": "duasChaves",
+  "QUANTIDADE DE CHAVES": "duasChaves",
+  CHAVES: "duasChaves",
 };
 
 function findDate(text: string): string | null {

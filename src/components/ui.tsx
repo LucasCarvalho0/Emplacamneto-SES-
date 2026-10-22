@@ -22,6 +22,33 @@ export function PlateTag({ plate, large = false }: { plate: string | null; large
   );
 }
 
+/** Badge com alto destaque visual para a vaga do veículo */
+export function BayBadge({ bay, large = false }: { bay: string | null | undefined; large?: boolean }) {
+  if (!bay) {
+    return (
+      <span
+        className={`inline-flex items-center gap-1 rounded border border-concreto-300 bg-concreto-100 text-asfalto-500 font-medium ${
+          large ? "px-3 py-1.5 text-sm" : "px-2 py-0.5 text-xs"
+        }`}
+      >
+        <span>📍 Vaga:</span>
+        <span className="italic">Não informada</span>
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-md border border-amber-400 bg-amber-50 text-amber-950 font-bold shadow-xs ${
+        large ? "px-3.5 py-1.5 text-lg" : "px-2 py-0.5 text-xs"
+      }`}
+    >
+      <span className="text-amber-600">📍 VAGA:</span>
+      <span className="font-mono tracking-wider">{bay}</span>
+    </span>
+  );
+}
+
 const STATUS: Record<string, { label: string; cls: string }> = {
   PENDING: { label: "Pendente", cls: "bg-concreto-200 text-asfalto-700" },
   ASSIGNED: { label: "Distribuído", cls: "bg-sinal-100 text-sinal-700" },

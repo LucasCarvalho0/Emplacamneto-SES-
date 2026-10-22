@@ -3,7 +3,7 @@ import { useState, useRef } from "react";
 import Link from "next/link";
 import type { VehicleView } from "@/lib/services/completion.service";
 import { BarcodeScanner } from "./barcode-scanner";
-import { KeyBadges, PlateTag } from "./ui";
+import { BayBadge, KeyBadges, PlateTag } from "./ui";
 import { btnPrimary, btnQuiet, field, labelCls } from "./styles";
 import { useHidScanner } from "@/hooks/use-hid-scanner";
 
@@ -12,7 +12,7 @@ type InputMode = "hid" | "camera" | "manual";
 type Step =
   | { kind: "scan" }
   | { kind: "confirm"; vehicle: VehicleView; scannedVin: string; method: Method }
-  | { kind: "done"; plate: string; vin: string }
+  | { kind: "done"; plate: string; vin: string; bay?: string | null }
   | { kind: "refused"; message: string };
 
 async function call<T>(url: string, body: unknown): Promise<T | { ok: false; message: string }> {
@@ -66,7 +66,7 @@ export function ScanFlow() {
     setBusy(false);
     if (r.ok && "plate" in r) {
       buzz(150);
-      setStep({ kind: "done", plate: r.plate, vin: r.vin });
+      setStep({ kind: "done", plate: r.plate, vin: r.vin, bay: step.vehicle.bay });
     } else {
       buzz(400);
       const message = "message" in r ? r.message : "Confirmação recusada.";
@@ -111,12 +111,19 @@ export function ScanFlow() {
   if (step.kind === "done") {
     return (
       <div role="status" className="space-y-4">
-        <div className="rounded-md border-2 border-ok bg-ok-100 p-5 text-center">
-          <p className="mb-3 text-xl font-semibold text-ok">Emplacamento registrado ✓</p>
-          <PlateTag plate={step.plate} large />
-          <p className="mt-3 font-mono text-xs">{step.vin}</p>
+        <div className="rounded-lg border-2 border-ok bg-ok-100 p-5 text-center shadow-sm">
+          <p className="mb-3 text-xl font-bold text-ok">Emplacamento concluído com sucesso! ✓</p>
+          <div className="flex justify-center mb-2">
+            <PlateTag plate={step.plate} large />
+          </div>
+          {step.bay && (
+            <div className="mt-2">
+              <BayBadge bay={step.bay} />
+            </div>
+          )}
+          <p className="mt-2 font-mono text-xs text-asfalto-700">Chassi: {step.vin}</p>
         </div>
-        <button onClick={again} className={`${btnPrimary} w-full py-3`}>
+        <button onClick={again} className={`${btnPrimary} w-full py-3.5 text-base font-semibold`}>
           Próximo veículo
         </button>
         <Link href="/operador" className={`${btnQuiet} w-full`}>
@@ -131,21 +138,51 @@ export function ScanFlow() {
     const v = step.vehicle;
     return (
       <div className="space-y-4">
-        <div className="rounded-md border border-concreto-200 bg-white p-4 text-center">
-          <p className="mb-2 text-sm text-asfalto-500">Placa autorizada para este veículo</p>
-          <PlateTag plate={v.plate} large />
-          <p className="mt-3 font-mono text-sm">{v.vin}</p>
-          <p className="mt-1 text-sm">{[v.model, v.color].filter(Boolean).join(", ")}</p>
-          {v.bay && <p className="text-sm text-asfalto-500">Vaga {v.bay}</p>}
-          <div className="mt-3">
+        {/* Card de informações do veículo conferido */}
+        <div className="rounded-lg border border-concreto-200 bg-white p-4 text-center shadow-xs space-y-3">
+          {/* Vaga em grande destaque para o operador confirmar */}
+          <div className="flex justify-center">
+            <BayBadge bay={v.bay} large />
+          </div>
+
+          <div>
+            <p className="mb-1 text-xs font-medium text-asfalto-500 uppercase tracking-wider">
+              Placa autorizada para este veículo
+            </p>
+            <PlateTag plate={v.plate} large />
+          </div>
+
+          <div className="rounded-md bg-concreto-50 p-2.5 text-xs text-asfalto-700 space-y-1">
+            <p className="font-mono font-bold text-asfalto-900 tracking-wider">CHASSI: {v.vin}</p>
+            <p>{[v.model, v.color].filter(Boolean).join(" • ")}</p>
+          </div>
+
+          <div className="flex justify-center">
             <KeyBadges retirar={v.retirarChave} duas={v.duasChaves} />
           </div>
         </div>
 
-        <div className="rounded-md border border-concreto-200 bg-white p-4">
+        {/* Confirmação da placa instalada */}
+        <div className="rounded-lg border border-concreto-200 bg-white p-4 shadow-xs">
           <label htmlFor="plate" className={labelCls}>
-            Digite a placa que você instalou
+            Confirme a placa que você instalou
           </label>
+
+          {/* Atalho para preencher com a placa autorizada */}
+          {v.plate && plate !== v.plate && (
+            <button
+              type="button"
+              onClick={() => {
+                setPlate(v.plate ?? "");
+                setPlateError(null);
+              }}
+              className="mb-3 w-full rounded border border-sinal/40 bg-sinal/10 py-2 text-xs font-semibold text-asfalto hover:bg-sinal/20 transition-colors flex items-center justify-center gap-1.5"
+            >
+              <span>⚡ Usar placa autorizada:</span>
+              <span className="font-mono font-bold text-sm tracking-wider">{v.plate}</span>
+            </button>
+          )}
+
           <input
             id="plate"
             value={plate}
@@ -154,6 +191,7 @@ export function ScanFlow() {
             autoCapitalize="characters"
             autoComplete="off"
             spellCheck={false}
+            placeholder={v.plate ?? "ABC1D23"}
             aria-invalid={!!plateError}
             className={`${field} text-center font-placa text-3xl tracking-[0.12em]`}
           />
@@ -165,7 +203,7 @@ export function ScanFlow() {
           <button
             onClick={confirm}
             disabled={busy || plate.replace("-", "").length < 7}
-            className={`${btnPrimary} mt-4 w-full py-3 text-base`}
+            className={`${btnPrimary} mt-4 w-full py-3 text-base font-semibold`}
           >
             {busy ? "Registrando…" : "Confirmar emplacamento"}
           </button>
