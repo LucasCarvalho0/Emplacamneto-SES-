@@ -21,11 +21,16 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
   // E-mail → administrativo; qualquer outra coisa → operador (matrícula)
   const isEmail = identifier.includes("@");
   const role = isEmail ? "ADMIN" : "OPERATOR";
-  const result = await authenticate(role, identifier, password);
-  if (!result.ok) return { error: result.message };
-  redirect(result.mustChangePassword ? "/trocar-senha" : role === "ADMIN" ? "/admin" : "/operador");
-}
 
-// Mantido para compatibilidade com imports existentes
-export const loginAdminAction = loginAction;
-export const loginOperatorAction = loginAction;
+  try {
+    const result = await authenticate(role, identifier, password);
+    if (!result.ok) return { error: result.message };
+    redirect(result.mustChangePassword ? "/trocar-senha" : role === "ADMIN" ? "/admin" : "/operador");
+  } catch (err) {
+    if (err && typeof err === "object" && "digest" in err && String((err as { digest: string }).digest).startsWith("NEXT_REDIRECT")) {
+      throw err;
+    }
+    console.error("Erro durante login:", err);
+    return { error: "Erro de autenticação no servidor. Verifique os dados ou tente novamente." };
+  }
+}
