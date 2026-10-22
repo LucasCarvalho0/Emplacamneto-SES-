@@ -117,9 +117,19 @@ export function LoginForm() {
           </Link>
         </p>
       )}
+
+      {/* Instalar App PWA */}
+      <div className="pt-2 border-t border-white/10 text-center">
+        <Link
+          href="/instalar"
+          className="inline-flex items-center gap-2 rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-xs font-medium text-white/70 hover:bg-white/10 hover:text-white transition-all shadow-xs"
+        >
+          <span>📲</span>
+          <span>Instalar Aplicativo (PWA) no celular / coletor</span>
+        </Link>
+      </div>
     </form>
   );
 }
 
 export default LoginForm;
-export const LoginFormUnified = LoginForm;

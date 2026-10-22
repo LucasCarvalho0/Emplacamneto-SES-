@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { LoginForm } from "./form";
 import Image from "next/image";
-import { PwaInstallBanner } from "@/components/pwa-install-banner";
 
 export const metadata = { title: "Entrar — Emplacamento Sesé" };
 
@@ -81,7 +80,6 @@ export default async function LoginPage({
           © {new Date().getFullYear()} Sesé Emplacamento. Todos os direitos reservados.
         </p>
       </div>
-      <PwaInstallBanner />
     </main>
   );
 }
